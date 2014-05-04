@@ -1,3 +1,4 @@
+package sequentiel;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.concurrent.BrokenBarrierException;
@@ -68,22 +69,5 @@ public class Car extends Thread{
 			road.reserveCase(reserve,this);
 		}
 			
-	}
-
-	public void run()
-	{
-		while(indexItineraire < itineraire.size()){
-			
-			tryMove();
-			
-			try {
-				barrier.await();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			} catch (BrokenBarrierException e) {
-				e.printStackTrace();
-			}
-			//road.checkConflict(this);
-		}
 	}
 }
