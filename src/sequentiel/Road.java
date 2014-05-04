@@ -3,7 +3,7 @@ package sequentiel;
 import java.util.concurrent.CyclicBarrier;
 
 import Commun.Position;
- 
+import Commun.Itineraire;
 
 public class Road{
 
@@ -60,12 +60,29 @@ public class Road{
              return cars.get(p);
        }
 
-	public void reserveCase(ArrayList<Position> reserve, Car car) {
+       public void reserveCase(ArrayList<Position> reserve, Car car) {
 				
 		for(Position p : reserve){
 			reservation.get(p).add(car);
 		}
 		
 	}
+       
+       public static void main(){
+    	   Road r = new Road();
+    	   List<Car> cars = new ArrayList<Car>();
+    	   
+    	   for(int i=0;i<4;i++){
+    		   int random = (int)(Math.random() * (3-1)) + 1;
+    		   cars.add(new Car(i,random,Itineraire.getPositionsFromIntineraire(Itineraire.Est_Nord),r));
+    	   }
+    	   while(!cars.isEmpty()){
+    		   for(int i = 0; i<cars.size();i++){
+    			   cars.get(i).tryMove();
+    		   }
+    	   }
+       }
+       
+       
    
 }

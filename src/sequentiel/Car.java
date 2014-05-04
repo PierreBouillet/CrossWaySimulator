@@ -13,20 +13,18 @@ public class Car extends Thread{
     private ArrayList<Position> itineraire;
     private int indexItineraire;
     private Road road;
-    private CyclicBarrier barrier;
 
 	public static final int MAXSPEED = 3;
 	public static final int MINSPEED = 0;
 
 
-	public Car(int num, Color clr, int speed, ArrayList<Position> iti, Road r, CyclicBarrier b) {
+	public Car(int num, int speed, ArrayList<Position> iti, Road r) {
 		this.num = num;
 		this.clr = clr;
 		this.speed = speed;
 		this.indexItineraire = 0;
 		this.itineraire = iti;
 		this.road = r;
-		this.barrier = b;
 	}
 
 
