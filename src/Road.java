@@ -23,16 +23,16 @@ public class Road{
     	   cars = new HashMap<Position, Car>();
     	   map = new boolean[SIZE][SIZE];
     	   
-    	   Position entreeSud = new Position(SIZE-1, SIZE/2+1);
-           Position entreeNord = new Position(0, SIZE/2);
-           Position entreeEst = new Position(SIZE/2+1, SIZE-1);
-           Position entreeOuest = new Position(SIZE/2, 0);
+    	   Position entreeSud = new Position(SIZE/2+1 , 0);
+           Position entreeNord = new Position( SIZE/2 ,SIZE-1);
+           Position entreeEst = new Position( SIZE-1,SIZE/2);
+           Position entreeOuest = new Position( 0,SIZE/2+1);
            
-           Position sortieSud =new Position(SIZE-1, SIZE/2);
-           Position sortieNord = new Position(0, SIZE/2+1);;
-           Position sortieEst = new Position(SIZE/2, SIZE-1);;
-           Position sortieOuestnew = new Position(SIZE/2+1, 0);;
-    	   
+           Position sortieSud =new Position( SIZE/2,0);
+           Position sortieNord = new Position(SIZE/2+1,SIZE-1 );
+           Position sortieEst = new Position( SIZE-1,SIZE/2+1);
+           Position sortieOuest = new Position( 0,SIZE/2);
+
 
     	   for(int i=0;i<SIZE;i++){
     		   for(int j=0;j<SIZE;j++){
