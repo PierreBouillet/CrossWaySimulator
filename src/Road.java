@@ -1,4 +1,5 @@
  import java.util.*;
+import java.util.concurrent.CyclicBarrier;
  
 
 public class Road{
@@ -16,7 +17,10 @@ public class Road{
        private Position sortieSud;
        private Position sortieNord;
        private Position sortieEst;
-       private Position sortieOuestnew;
+       private Position sortieOuest;
+       private CyclicBarrier barrier;
+       
+       private HashMap<Position, ArrayList<Car> > reservation;
       
        public Road() {
     	   
@@ -29,9 +33,11 @@ public class Road{
            Position entreeOuest = new Position(SIZE/2, 0);
            
            Position sortieSud =new Position(SIZE-1, SIZE/2);
-           Position sortieNord = new Position(0, SIZE/2+1);;
-           Position sortieEst = new Position(SIZE/2, SIZE-1);;
-           Position sortieOuestnew = new Position(SIZE/2+1, 0);;
+           Position sortieNord = new Position(0, SIZE/2+1);
+           Position sortieEst = new Position(SIZE/2, SIZE-1);
+           Position sortieOuestnew = new Position(SIZE/2+1, 0);
+           
+           barrier = new CyclicBarrier(cars.size());
     	   
 
     	   for(int i=0;i<SIZE;i++){
@@ -50,6 +56,17 @@ public class Road{
        {
              return cars.get(p);
        }
-    
 
+	public reserveCase(ArrayList<Position> reserve, Car car) {
+				
+		for(Position p : reserve){
+			reservation.get(p).add(car);
+		}
+		
+	}
+
+	public List<Car> checkConflict(Car car) {
+		
+		
+	}   
 }

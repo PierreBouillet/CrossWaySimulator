@@ -1,23 +1,29 @@
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 public class Car extends Thread{
 
 	private int num;
 	private Color clr;
 	private int speed;
-	private Position positionActuelle;
-	private Position destination;
-	private Direction direction;
+    private ArrayList<Position> itineraire;
+    private int indexItineraire;
+    private Road road;
+    private CyclicBarrier barrier;
 
 	public static final int MAXSPEED = 3;
 	public static final int MINSPEED = 0;
 
 
-	public Car(int num, Color clr, int speed, Position positionDep, Position destination) {
+	public Car(int num, Color clr, int speed, ArrayList<Position> iti, Road r, CyclicBarrier b) {
 		this.num = num;
 		this.clr = clr;
 		this.speed = speed;
-		this.positionActuelle = positionDep;
-		this.destination = destination;
+		this.indexItineraire = 0;
+		this.itineraire = iti;
+		this.road = r;
+		this.barrier = b;
 	}
 
 
@@ -48,24 +54,34 @@ public class Car extends Thread{
 			speed--;
 	}
 	public Position getPosition(){
-		return positionActuelle;
+		return itineraire.get(indexItineraire);
 	}
 
-	public void move()
+	public void tryMove()
 	{
-		if()
+		if(indexItineraire + speed < itineraire.size()){
+			ArrayList<Position> reserve = new ArrayList<Position>();
+			for(int i=0; i<=speed; i++)
+				reserve.add(itineraire.get(i+indexItineraire));
+			road.reserveCase(reserve,this);
+		}
+			
 	}
 
 	public void run()
 	{
-		while(true){
+		while(indexItineraire < itineraire.size()){
+			
+			tryMove();
+			
 			try {
-				sleep(100);
+				barrier.await();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (BrokenBarrierException e) {
 				e.printStackTrace();
 			}
-			move();
+			road.checkConflict(this);
 		}
 	}
 }
