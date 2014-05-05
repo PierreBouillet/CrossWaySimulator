@@ -26,4 +26,26 @@ public class Position {
 		this.y = y;
 	}
 
+    public static Position substract(Position p1, Position p2)
+    {
+        return new Position (p1.x - p2.x, p1.y - p2.y);
+    }
+
+    public static Position add(Position p1, Position p2)
+    {
+        return new Position (p1.x + p2.x, p1.y + p2.y);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Position position = (Position) o;
+
+        if (x != position.x) return false;
+        if (y != position.y) return false;
+
+        return true;
+    }
 }
