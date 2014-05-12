@@ -7,6 +7,7 @@ import java.util.*;
  */
 public class CrossRoadsLogic
 {
+    private final double apparitionProbability = 0.15;
     private int size = Consts.size;
     private int roadSize = Consts.roadSize;
     private ArrayList<CrossRoadsCase> cells;
@@ -22,10 +23,14 @@ public class CrossRoadsLogic
         for (int row = 0; row < size; row++) {
             for (int col = 0; col < size; col++) {
                 boolean isRelevant = false;
+                boolean isCrossroad = false;
                 if (col >= size / 2 - roadSize &&  col < size / 2 + roadSize
                         || row >= size / 2 - roadSize &&  row < size / 2 + roadSize)
                     isRelevant = true;
-                CrossRoadsCase cell = new CrossRoadsCase(col, row, isRelevant);
+                if (col >= size / 2 - roadSize &&  col < size / 2 + roadSize
+                        && row >= size / 2 - roadSize &&  row < size / 2 + roadSize)
+                    isCrossroad = true;
+                CrossRoadsCase cell = new CrossRoadsCase(col, row, isRelevant, isCrossroad);
                 cells.add(cell);
             }
         }
@@ -49,14 +54,14 @@ public class CrossRoadsLogic
         Position southIn;
         Position southOut;
 
-        northIn = new Position(size / 2 - roadSize, 0);
-        northOut = new Position(size / 2 + roadSize - 1, 0);
-        southIn = new Position(size / 2 + roadSize - 1, size - 1);
-        southOut = new Position(size / 2 - roadSize, size - 1);
-        westIn = new Position(0, size / 2 + roadSize - 1);
-        westOut = new Position(0, size / 2 - roadSize);
-        eastIn = new Position(size - 1, size / 2 - roadSize);
-        eastOut = new Position(size - 1, size / 2 + roadSize - 1);
+        westOut = new Position(size / 2 - roadSize, 0); // westOut
+        westIn = new Position(size / 2 + roadSize - 1, 0); // westIn
+        eastOut = new Position(size / 2 + roadSize - 1, size - 1); // eastOut
+        eastIn = new Position(size / 2 - roadSize, size - 1); // eastIn
+        northOut = new Position(0, size / 2 + roadSize - 1); // northOut
+        northIn = new Position(0, size / 2 - roadSize); // northIn
+        southOut = new Position(size - 1, size / 2 - roadSize); // southOut
+        southIn = new Position(size - 1, size / 2 + roadSize - 1); //southIn
 
         ins.add(northIn);
         ins.add(southIn);
@@ -66,50 +71,16 @@ public class CrossRoadsLogic
         outs.add(southOut);
         outs.add(westOut);
         outs.add(eastOut);
-
-        createCar();
     }
 
     public void testItineraire(Itineraire it)
     {
-        for (CrossRoadsCase cell: cells)
-        {
-            for (Position p: it.getItineraire())
-            {
-                if (cell.getX() == p.getX() && cell.getY() == p.getY())
-                {
-                    cell.setContent(new Car(Color.RED));
-                }
+            for (Position p: it.getItineraire()) {
+
+                System.out.println(p);
             }
-        }
+        System.out.println("ENDDEBUG");
     }
-
-    public void test()
-    {
-        /*
-            for (CrossRoadsCase cell: cells)
-            {
-                if (northIn.getX() == cell.getX() && northIn.getY() == cell.getY())
-                    cell.setContent(new Car(Color.RED));
-                if (southIn.getX() == cell.getX() && southIn.getY() == cell.getY())
-                    cell.setContent(new Car(Color.RED));
-                if (eastIn.getX() == cell.getX() && eastIn.getY() == cell.getY())
-                    cell.setContent(new Car(Color.RED));
-                if (westIn.getX() == cell.getX() && westIn.getY() == cell.getY())
-                    cell.setContent(new Car(Color.RED));
-                if (northOut.getX() == cell.getX() && northOut.getY() == cell.getY())
-                    cell.setContent(new Car(Color.BLUE));
-                if (southOut.getX() == cell.getX() && southOut.getY() == cell.getY())
-                    cell.setContent(new Car(Color.BLUE));
-                if (eastOut.getX() == cell.getX() && eastOut.getY() == cell.getY())
-                    cell.setContent(new Car(Color.BLUE));
-                if (westOut.getX() == cell.getX() && westOut.getY() == cell.getY())
-                    cell.setContent(new Car(Color.BLUE));
-
-            }
-            */
-    }
-
     private int getSign(int coord)
     {
         return (coord < 0 ? -1 : 1);
@@ -167,57 +138,191 @@ public class CrossRoadsLogic
             currentPos = new Position(currentPos.getX(), currentPos.getY() + signY);
         }
 
-
         pos.add(to);
         return (new Itineraire(pos));
     }
 
-    //TODO: Foolcheck sur l'occupation de la position d'arrivée
-    public void createCar()
+    public void createNewCars()
     {
-        ArrayList<Integer> possiblePos = new ArrayList<Integer>(ins.size());
-        Integer from;
-        Integer to;
+        ArrayList<Integer> possibleFromPos = new ArrayList<Integer>();
+        ArrayList<Integer> possibleToPos = new ArrayList<Integer>(outs.size());
 
         for (int i = 0; i < ins.size(); ++i)
         {
-            possiblePos.add(i);
+            possibleToPos.add(i);
+            // Si la cellule contient déjà une voiture on ne peut pas y faire apparaître une autre voiture
+            if (getCellFromPosition(ins.get(i)).getContent() == null)
+            {
+                possibleFromPos.add(i);
+            }
         }
 
-        from = possiblePos.get(random.nextInt(possiblePos.size()));
-        possiblePos.remove(from);
-        to = possiblePos.get(random.nextInt(possiblePos.size()));
-
-        //TODO: Pourquoi pas generateItineraire(ins.get(from), outs.get(to)); ? Liste inversée ? Pourquoi ?
-        Itineraire it = generateItineraire(outs.get(to), ins.get(from));
-        Car newCar = new Car(carId, new Color((int)(Math.random() * 0x1000000)), 1, it);
-        cars.add(newCar);
-        setCarToCell(newCar);
+        // Pour chaque case de départ non utilisée, on jette un dé afin de décider de l'apparition ou non d'une nouvelle voiture
+        while (!possibleFromPos.isEmpty())
+        {
+            Integer from = possibleFromPos.get(random.nextInt(possibleFromPos.size()));
+            if (random.nextFloat() < apparitionProbability)
+            {
+                // On retire la direction de départ de la liste de directions d'arrivé
+                // En effet nous ne souhaitons pas qu'un véhicule fasse demi tour en arrivant
+                // dans le carrefour
+                possibleToPos.remove(from);
+                Integer to = possibleToPos.get(random.nextInt(possibleToPos.size()));
+                //TODO: Pourquoi pas generateItineraire(ins.get(from), outs.get(to)); ? Liste inversée ? Pourquoi ?
+                // On crée la liste de cases permettant d'aller du départ à l'arrivée
+                Itineraire it = generateItineraire(ins.get(from), outs.get(to));
+                // On crée une nouvelle voiture d'une couleur aléatoire et possédant l'itinéraire généré ci-dessus
+                Car newCar = new Car(carId, new Color((int)(Math.random() * 0x1000000)), 1, it);
+                // On ajoute la voiture au système
+                cars.add(newCar);
+                setCarToCell(newCar);
+                // On remet la direction précédemment enlevée dans la liste possible des destinations d'arrivées
+                possibleToPos.add(from);
+            }
+            // On supprime cette case de départ de la liste.
+            possibleFromPos.remove(from);
+        }
     }
 
+    private CrossRoadsCase getCellFromPosition(Position pos)
+    {
+        return (cells.get(pos.getX() * size + pos.getY()));
+    }
     private void setCarToCell(Car car)
     {
-        cells.get(car.getPosition().getX() * size + car.getPosition().getY()).setContent(car);
+        getCellFromPosition(car.getPosition()).setContent(car);
     }
 
-    private void unSetCarToCell(Car car)
+    private void unSetCarFromCell(Car car)
     {
-        cells.get(car.getPosition().getX() * size + car.getPosition().getY()).setContent(null);
+        getCellFromPosition(car.getPosition()).setContent(null);
+    }
+
+
+    private void debugCounts()
+    {
+        System.out.println("Car counts: " + cars.size());
+        int carCount = 0;
+        for (CrossRoadsCase cell: cells)
+        {
+            if (cell.getContent() != null)
+                carCount++;
+        }
+        System.out.println("Real car count: " + carCount);
+    }
+
+    private void moveCarAlgorithm()
+    {
+        ArrayList<Car> carListCopy = new ArrayList<Car>(cars);
+        ArrayList<Car> alreadyOnCrossroadCars = new ArrayList<Car>();
+        moveAlreadyOnCrossroadCars(carListCopy, alreadyOnCrossroadCars);
+        moveEnteringCrossroadCars(carListCopy, alreadyOnCrossroadCars);
+        moveOtherCars(carListCopy);
+    }
+
+    private boolean intersectsOnCrossroad(Itineraire t1, Itineraire t2)
+    {
+        for (Position p1: t1.getItineraire())
+        {
+            for (Position p2: t2.getItineraire())
+            {
+                if (getCellFromPosition(p1).isCrossroad() && getCellFromPosition(p2).isCrossroad())
+                {
+                    if (p1.equals(p2))
+                        return (true);
+                }
+            }
+        }
+        return (false);
+    }
+
+    private void moveOtherCars(ArrayList<Car> carListCopy)
+    {
+        boolean hasMoved = true;
+        while (!carListCopy.isEmpty() && hasMoved)
+        {
+            hasMoved = false;
+            for (Iterator<Car> it = carListCopy.iterator(); it.hasNext();)
+            {
+                Car car = it.next();
+                if (getCellFromPosition(car.getNextMove()).getContent() == null)
+                {
+                    hasMoved = true;
+                    unSetCarFromCell(car);
+                    car.moveCar();
+                    setCarToCell(car);
+                    it.remove();
+                }
+            }
+        }
+    }
+
+
+    private void moveEnteringCrossroadCars(ArrayList<Car> carListCopy, ArrayList<Car> alreadyOnCrossroadCars)
+    {
+        ArrayList<Car> enteringCrossroadCars = new ArrayList<Car>();
+        for (Iterator<Car> it = carListCopy.iterator(); it.hasNext();)
+        {
+            Car car = it.next();
+            if (getCellFromPosition(car.getNextMove()).isCrossroad())
+            {
+                enteringCrossroadCars.add(car);
+                it.remove();
+            }
+        }
+        for (Car enteringCar: enteringCrossroadCars)
+        {
+            boolean canEnter = true;
+            for (Car alreadyOnCrossroadCar : alreadyOnCrossroadCars) {
+                if (intersectsOnCrossroad(alreadyOnCrossroadCar.getItineraire(), enteringCar.getItineraire()))
+                {
+                    canEnter = false;
+                }
+            }
+            if (canEnter)
+            {
+                unSetCarFromCell(enteringCar);
+                enteringCar.moveCar();
+                setCarToCell(enteringCar);
+                alreadyOnCrossroadCars.add(enteringCar);
+            }
+        }
+    }
+
+    private void moveAlreadyOnCrossroadCars(ArrayList<Car> carListCopy, ArrayList<Car> alreadyOnCrossroadCars)
+    {
+        for (Iterator<Car> it = carListCopy.iterator(); it.hasNext();)
+        {
+            Car car = it.next();
+            if (getCellFromPosition(car.getPosition()).isCrossroad())
+            {
+                alreadyOnCrossroadCars.add(car);
+                unSetCarFromCell(car);
+                car.moveCar();
+                setCarToCell(car);
+                it.remove();
+            }
+        }
+    }
+
+    private void removeOutOfScreenCars()
+    {
+        for (Iterator<Car> it = cars.iterator(); it.hasNext();)
+        {
+            Car car = it.next();
+            if (car.getNextMove() == null)
+            {
+                unSetCarFromCell(car);
+                it.remove();
+            }
+        }
     }
 
     public void step()
     {
-        if (random.nextFloat() < 0.2)
-            createCar();
-        for (Iterator<Car> it = cars.iterator(); it.hasNext();)
-        {
-            Car car = it.next();
-            unSetCarToCell(car);
-            if (!car.moveCar())
-                it.remove();
-            else
-                setCarToCell(car);
-        }
+        removeOutOfScreenCars();
+        moveCarAlgorithm();
+        createNewCars();
     }
 
     public ArrayList<CrossRoadsCase> getCells()

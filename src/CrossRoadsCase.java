@@ -9,10 +9,12 @@ public class CrossRoadsCase
     private int y;
     private Car content;
     private boolean isRelevant;
+    private boolean isCrossroad;
 
-    public CrossRoadsCase(int x, int y, boolean isRelevant)
+    public CrossRoadsCase(int x, int y, boolean isRelevant, boolean isCrossroad)
     {
         this.isRelevant = isRelevant;
+        this.isCrossroad = isCrossroad;
         this.x = x;
         this.y = y;
         content = null;
@@ -50,5 +52,9 @@ public class CrossRoadsCase
 
     public void setRelevant(boolean isRelevant) {
         this.isRelevant = isRelevant;
+    }
+
+    public boolean isCrossroad() {
+        return isCrossroad;
     }
 }

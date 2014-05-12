@@ -16,7 +16,6 @@ public class Main {
         frame.setResizable(false);
         frame.repaint();
 
-        logic.test();
         while (true)
         {
             logic.step();

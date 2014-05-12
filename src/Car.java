@@ -10,7 +10,6 @@ public class Car extends Thread{
 	private int speed;
     private Itineraire itineraire;
     private int indexItineraire;
-
 	public static final int MAXSPEED = 3;
 	public static final int MINSPEED = 0;
 
@@ -37,7 +36,9 @@ public class Car extends Thread{
 	public void setNum(int num) {
 		this.num = num;
 	}
-
+    public Itineraire getItineraire() {
+        return itineraire;
+    }
 	public Color getClr() {
 		return clr;
 	}
@@ -60,14 +61,24 @@ public class Car extends Thread{
 		return itineraire.getItineraire().get(indexItineraire);
 	}
 
-    public boolean moveCar()
+    public void moveCar()
     {
-        if (indexItineraire + 1 < itineraire.getItineraire().size())
+        if (indexItineraire < itineraire.getItineraire().size() - 1)
         {
             ++indexItineraire;
-            return true;
         }
-        return false;
+    }
+
+    public Position getNextMove()
+    {
+        if (indexItineraire < itineraire.getItineraire().size() - 1)
+        {
+            return (itineraire.getItineraire().get(indexItineraire + 1));
+        }
+        else
+        {
+            return null;
+        }
     }
 
 }
