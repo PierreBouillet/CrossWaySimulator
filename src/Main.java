@@ -3,9 +3,9 @@ import javax.swing.*;
 
 public class Main {
     public static void main(String[] args) {
-        CrossRoadsLogic logic = new CrossRoadsLogic();
         JFrame frame = new JFrame("Problème du carrefour - Version itérative");
         CrossRoadsPanel panel = new CrossRoadsPanel();
+        CrossRoadsLogicConcurrent logic = new CrossRoadsLogicConcurrent();
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
@@ -19,7 +19,7 @@ public class Main {
         while (true)
         {
             logic.step();
-            panel.updateGraphicsFromLogic(logic.getCells());
+            panel.updateGraphicsFromLogicConc(logic.getCells());
             panel.repaint();
             frame.repaint();
             frame.pack();

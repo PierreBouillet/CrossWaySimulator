@@ -54,6 +54,28 @@ public class CrossRoadsPanel extends JPanel {
             ++i;
         }
     }
+    
+    public void updateGraphicsFromLogicConc(ArrayList<CrossRoadCaseConcurrent> logicCells)
+    {
+        int i = 0;
+        for (CrossRoadCaseConcurrent logicCell: logicCells)
+        {
+            ColoredRectangle matchingRectangle = cells.get(i);
+            if (logicCell.isRelevant())
+            {
+                if (logicCell.getContent() != null) {
+                    matchingRectangle.setBackground(logicCell.getContent().getClr());
+                } else {
+                    matchingRectangle.setBackground(Color.GRAY);
+                }
+            }
+            else
+            {
+                matchingRectangle.setBackground(Color.DARK_GRAY);
+            }
+            ++i;
+        }
+    }
     @Override
     public Dimension getPreferredSize() {
         return new Dimension(800, 800);

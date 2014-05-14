@@ -18,12 +18,16 @@ public class CarConcurrent extends Thread{
 
 	private CyclicBarrier barrierNextMove;
 	private CyclicBarrier barrierStep;
+	private CyclicBarrier init;
+	private CyclicBarrier clearMoveStep;
+	
+	private SharedRessources shared;
 
 	// 1=entering, CrossRoad 2= In crossRoad, 0=else
 	private int state;
 
 
-	public CarConcurrent(int num, Color clr, int speed, Itineraire iti, CrossRoadsLogicConcurrent cr)
+	public CarConcurrent(int num, Color clr, int speed, Itineraire iti, CrossRoadsLogicConcurrent cr, SharedRessources sh)
 	{
 		this.num = num;
 		this.clr = clr;
@@ -32,6 +36,12 @@ public class CarConcurrent extends Thread{
 		this.itineraire = iti;
 		this.crossRoad = cr;
 		this.state = 0;
+		this.barrierNextMove = new CyclicBarrier(1);
+		this.barrierStep = new CyclicBarrier(1);
+		this.init = new CyclicBarrier(1);
+		this.clearMoveStep = new CyclicBarrier(1);
+		shared = sh;
+		System.out.println("car number " + num + " has been created");
 	}
 
 	public CarConcurrent(Color clr)
@@ -76,7 +86,9 @@ public class CarConcurrent extends Thread{
 	{
 		if (indexItineraire < itineraire.getItineraire().size() - 1)
 		{
+			crossRoad.unSetCarFromCell(this);
 			++indexItineraire;
+			crossRoad.setCarToCell(this);
 		}
 	}
 
@@ -91,12 +103,24 @@ public class CarConcurrent extends Thread{
 			return null;
 		}
 	}
-
+	@Override
 	public void run()
 	{	
-		SetNextMove();
+		
 		while(indexItineraire < itineraire.getItineraire().size()){
-
+			
+			if(num==0)
+				System.out.println(indexItineraire + " " + itineraire.getItineraire().size() + " " + init.getParties());
+			
+			try {
+				init.await();
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+			
+			SetNextMove();
+			if(num==0)
+				System.out.println(indexItineraire + " " + itineraire.getItineraire().size());
 			try {
 				barrierNextMove.await();
 			} catch (Exception e) {
@@ -104,28 +128,37 @@ public class CarConcurrent extends Thread{
 			}
 
 			//if there is no conflict the car can move
-			if(crossRoad.getNextCarsMove(getNextMove()) == 1){
+			if(shared.getNextCarsMove(getNextMove()) == 1){
 				moveCar();
-
 				//if the new position is on the crossWay, the car change is state to on crossWay
 				if(crossRoad.isPositionCrossRoad(getPosition()))
 				{
-					crossRoad.addCarsOnCrossRoad(this);
+					shared.addCarsOnCrossRoad(this);
 					state = 2;
-					crossRoad.deleteCarWaiting(this);
+					shared.deleteCarWaiting(this);
 				}
 				//if the next position is on the crossWay, the car change is state to on onWaiting
 				if(crossRoad.isPositionCrossRoad(getNextMove()))
-					crossRoad.addCarWaiting(this);
+					shared.addCarWaiting(this);
 				state=1;
 			}
-
+			if(num==0)
+				System.out.println(indexItineraire + " " + itineraire.getItineraire().size());
+			try {
+				clearMoveStep.await();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			if(num==0)
+				System.out.println(indexItineraire + " " + itineraire.getItineraire().size());
 			try {
 				barrierStep.await();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+
 		}
+
 		crossRoad.deleteCars(this);
 		crossRoad.unSetCarFromCell(this);
 	}
@@ -149,13 +182,13 @@ public class CarConcurrent extends Thread{
 	private void SetNextMove(){
 
 		if(state==0 || state==2)
-			crossRoad.addNextCarsMove(itineraire.getItineraire().get(indexItineraire + 1));
+			shared.addNextCarsMove(getNextMove());
 
 		if(state==1){
 
 			boolean canEnter = true;
 
-			for (CarConcurrent alreadyOnCrossroadCar : crossRoad.getCarsOnCrossRoad()) {
+			for (CarConcurrent alreadyOnCrossroadCar : shared.getCarsOnCrossRoad()) {
 				if (intersectsOnCrossroad(alreadyOnCrossroadCar.getItineraire(), itineraire))
 				{
 					canEnter = false;
@@ -163,14 +196,15 @@ public class CarConcurrent extends Thread{
 			}
 			if (canEnter)
 			{
-				crossRoad.addNextCarsMove(itineraire.getItineraire().get(indexItineraire + 1));
+				shared.addNextCarsMove(itineraire.getItineraire().get(indexItineraire + 1));
 			}
 			else
 			{
-				crossRoad.addNextCarsMove(itineraire.getItineraire().get(indexItineraire));
+				shared.addNextCarsMove(itineraire.getItineraire().get(indexItineraire));
 			}
 		}
 
+		System.out.println("car number " + num + " has set his move");
 	}
 
 
@@ -188,6 +222,22 @@ public class CarConcurrent extends Thread{
 
 	public void setBarrierStep(CyclicBarrier barrierStep) {
 		this.barrierStep = barrierStep;
+	}
+	
+	public CyclicBarrier getBarrierInit() {
+		return init;
+	}
+
+	public void setBarrierInit(CyclicBarrier init) {
+		this.init = init;
+	}
+
+	public CyclicBarrier getClearMoveStep() {
+		return clearMoveStep;
+	}
+
+	public void setClearMoveStep(CyclicBarrier clearMoveStep) {
+		this.clearMoveStep = clearMoveStep;
 	}
 
 }
