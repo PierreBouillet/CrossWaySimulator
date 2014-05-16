@@ -10,6 +10,9 @@ public class SharedRessources {
 
 	private ArrayList<CarConcurrent> carsOnCrossRoad;
 	private ArrayList<CarConcurrent> carsWaiting;
+
+	private int currentThreads;
+	private int initializedThreads;
 	
 	public SharedRessources() {
 		
@@ -17,6 +20,9 @@ public class SharedRessources {
 
 		carsOnCrossRoad = new ArrayList<CarConcurrent>();
 		carsWaiting  = new ArrayList<CarConcurrent>();
+		
+		currentThreads = 0;
+		initializedThreads = 0;
 	}
 	
 	synchronized public int getNextCarsMove(Position next) {
@@ -60,6 +66,22 @@ public class SharedRessources {
 	
 	synchronized public void clearNextCarsMove(){
 		nextCarsMove.clear();
+	}
+	
+	synchronized public int getCurrentThreads() {
+		return currentThreads;
+	}
+
+	synchronized public void setCurrentThreads(int currentThreads) {
+		this.currentThreads = currentThreads;
+	}
+
+	synchronized public int getInitializedThreads() {
+		return initializedThreads;
+	}
+
+	synchronized public void setInitializedThreads(int initializedThreads) {
+		this.initializedThreads = initializedThreads;
 	}
 
 }

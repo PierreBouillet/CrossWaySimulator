@@ -1,5 +1,6 @@
 import java.awt.BorderLayout;
 import javax.swing.*;
+import javax.swing.plaf.SliderUI;
 
 public class Main {
     public static void main(String[] args) {

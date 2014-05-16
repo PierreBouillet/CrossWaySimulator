@@ -10,7 +10,7 @@ import java.util.concurrent.CyclicBarrier;
  */
 public class CrossRoadsLogicConcurrent
 {
-	private final double apparitionProbability = 0.15;
+	private final double apparitionProbability = 0.10;
 	private int size = Consts.size;
 	private int roadSize = Consts.roadSize;
 	private ArrayList<CrossRoadCaseConcurrent> cells;
@@ -24,7 +24,15 @@ public class CrossRoadsLogicConcurrent
 	private CyclicBarrier barrierNextMove;
 	private CyclicBarrier barrierStep;
 	private CyclicBarrier init;
-	private CyclicBarrier clearMoveStep;
+
+	Position northIn;
+	Position northOut;
+	Position eastIn;
+	Position eastOut;
+	Position westIn;
+	Position westOut;
+	Position southIn;
+	Position southOut;
 
 
 	public CrossRoadsLogicConcurrent()
@@ -51,20 +59,15 @@ public class CrossRoadsLogicConcurrent
 		outs = new ArrayList<Position>();
 		shared= new SharedRessources();
 		generatePositions();
+
+		barrierNextMove = new CyclicBarrier(1);
+		barrierStep = new CyclicBarrier(1);  
+		init  = new CyclicBarrier(1);
 	}
 
 	// TODO: Retirer les variables temporaires ?
 	private void generatePositions()
 	{
-		Position northIn;
-		Position northOut;
-		Position eastIn;
-		Position eastOut;
-		Position westIn;
-		Position westOut;
-		Position southIn;
-		Position southOut;
-
 		westOut = new Position(size / 2 - roadSize, 0); // westOut
 		westIn = new Position(size / 2 + roadSize - 1, 0); // westIn
 		eastOut = new Position(size / 2 + roadSize - 1, size - 1); // eastOut
@@ -184,7 +187,9 @@ public class CrossRoadsLogicConcurrent
 				// On crée la liste de cases permettant d'aller du départ à l'arrivée
 				Itineraire it = generateItineraire(ins.get(from), outs.get(to));
 				// On crée une nouvelle voiture d'une couleur aléatoire et possédant l'itinéraire généré ci-dessus
-				CarConcurrent newCar = new CarConcurrent(carId, new Color((int)(Math.random() * 0x1000000)), 1, it, this, shared);
+
+				Direction dir = getDirection(from,to);
+				CarConcurrent newCar = new CarConcurrent(carId, new Color((int)(Math.random() * 0x1000000)), 1, it, this, shared,dir,from);
 				carId++;
 				// On ajoute la voiture au système
 				cars.add(newCar);
@@ -197,6 +202,61 @@ public class CrossRoadsLogicConcurrent
 			possibleFromPos.remove(from);
 		}
 		return newCars;
+	}
+
+	public Direction getDirection(int from, int to) {
+		
+		if(northIn==ins.get(from)){
+
+			if(southOut==outs.get(to)){
+				return Direction.FRONT;
+			}
+			if(eastOut==outs.get(to)){
+				return Direction.LEFT;
+			}
+			if(westOut==outs.get(to)){
+				return Direction.RIGHT;
+			}
+		}
+		if(southIn==ins.get(from)){
+			
+			if(northOut==outs.get(to)){
+				return Direction.FRONT;
+			}
+			if(eastOut==outs.get(to)){
+				return Direction.RIGHT;
+			}
+			if(westOut==outs.get(to)){
+				return Direction.LEFT;
+			}
+
+		}
+		if(eastIn==ins.get(from)){
+			
+			if(northOut==outs.get(to)){
+				return Direction.RIGHT;
+			}
+			if(southOut==outs.get(to)){
+				return Direction.LEFT;
+			}
+			if(westOut==outs.get(to)){
+				return Direction.FRONT;
+			}
+
+		}
+		if(westIn==ins.get(from)){
+
+			if(northOut==outs.get(to)){
+				return Direction.LEFT;
+			}
+			if(southOut==outs.get(to)){
+				return Direction.RIGHT;
+			}
+			if(eastOut==outs.get(to)){
+				return Direction.FRONT;
+			}
+		}
+		return null;
 	}
 
 	public CrossRoadCaseConcurrent getCellFromPosition(Position pos)
@@ -229,52 +289,37 @@ public class CrossRoadsLogicConcurrent
 
 	public void step()
 	{
-
-
+		System.out.println("-------------------------begin step --------------------------");
 		ArrayList<CarConcurrent> l = createNewCars();
 
 		int nbCar = cars.size();
-		if(nbCar>0){
-			barrierNextMove = new CyclicBarrier(nbCar);
-			barrierStep = new CyclicBarrier(nbCar+1);  
-			init  = new CyclicBarrier(nbCar+1);
-			clearMoveStep = new CyclicBarrier(nbCar+1);
-			//nextCarsMove.clear();
-
-			for(CarConcurrent c : cars){
-				c.setBarrierStep(barrierStep);
-				c.setBarrier(barrierNextMove);
-				c.setBarrierInit(init);
-				c.setClearMoveStep(clearMoveStep);
-				System.out.println("car number "+ c.getNum() + " has been initialized");
-			}
-
-			for(CarConcurrent c : l)
-				c.start();
-			
-			l.clear();
-		
-		try {
-			init.await();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-		try {
-			clearMoveStep.await();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
+		shared.setCurrentThreads(nbCar);
 		shared.clearNextCarsMove();
-		
+
+		for(CarConcurrent c : l)
+			c.start();
+
+		synchronized (shared) {
+			if(nbCar>0){
+				barrierNextMove = new CyclicBarrier(nbCar);
+				barrierStep = new CyclicBarrier(nbCar+1);  
+
+				for(CarConcurrent c : cars){
+					c.setBarrierStep(barrierStep);
+					c.setBarrier(barrierNextMove);
+					shared.setInitializedThreads(shared.getInitializedThreads()+1);
+				}
+				shared.notifyAll();
+			}
+		}
+
+		l.clear();
+
 		try {
 			barrierStep.await();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		}
-
 
 	}
 
