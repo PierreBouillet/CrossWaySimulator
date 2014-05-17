@@ -10,7 +10,7 @@ import java.util.concurrent.CyclicBarrier;
  */
 public class CrossRoadsLogicConcurrent
 {
-	private final double apparitionProbability = 0.10;
+	private final double apparitionProbability = 0.1;
 	private int size = Consts.size;
 	private int roadSize = Consts.roadSize;
 	private ArrayList<CrossRoadCaseConcurrent> cells;

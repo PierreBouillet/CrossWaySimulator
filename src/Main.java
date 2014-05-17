@@ -1,4 +1,8 @@
 import java.awt.BorderLayout;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
+
 import javax.swing.*;
 import javax.swing.plaf.SliderUI;
 
