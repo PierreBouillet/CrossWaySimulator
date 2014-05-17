@@ -23,7 +23,6 @@ public class CrossRoadsLogicConcurrent
 
 	private CyclicBarrier barrierNextMove;
 	private CyclicBarrier barrierStep;
-	private CyclicBarrier init;
 
 	Position northIn;
 	Position northOut;
@@ -62,7 +61,6 @@ public class CrossRoadsLogicConcurrent
 
 		barrierNextMove = new CyclicBarrier(1);
 		barrierStep = new CyclicBarrier(1);  
-		init  = new CyclicBarrier(1);
 	}
 
 	// TODO: Retirer les variables temporaires ?
@@ -204,7 +202,7 @@ public class CrossRoadsLogicConcurrent
 		return newCars;
 	}
 
-	public Direction getDirection(int from, int to) {
+	synchronized public Direction getDirection(int from, int to) {
 		
 		if(northIn==ins.get(from)){
 
@@ -263,12 +261,12 @@ public class CrossRoadsLogicConcurrent
 	{
 		return (cells.get(pos.getX() * size + pos.getY()));
 	}
-	public void setCarToCell(CarConcurrent car)
+	synchronized public void setCarToCell(CarConcurrent car)
 	{
 		getCellFromPosition(car.getPosition()).setContent(car);
 	}
 
-	public void unSetCarFromCell(CarConcurrent car)
+	synchronized public void unSetCarFromCell(CarConcurrent car)
 	{
 		getCellFromPosition(car.getPosition()).setContent(null);
 	}
@@ -295,7 +293,7 @@ public class CrossRoadsLogicConcurrent
 		int nbCar = cars.size();
 		shared.setCurrentThreads(nbCar);
 		shared.clearNextCarsMove();
-
+		
 		for(CarConcurrent c : l)
 			c.start();
 
@@ -314,7 +312,6 @@ public class CrossRoadsLogicConcurrent
 		}
 
 		l.clear();
-
 		try {
 			barrierStep.await();
 		} catch (Exception e) {

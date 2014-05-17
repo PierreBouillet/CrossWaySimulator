@@ -25,6 +25,7 @@ public class CarConcurrent extends Thread{
 	private boolean CanMove;
 	private Position nextPosition;
 	private Direction direction;
+	private int comesFrom;
 
 	// 1=entering, CrossRoad 2= In crossRoad, 3=crossed, 0=else
 	private int state;
@@ -104,15 +105,27 @@ public class CarConcurrent extends Thread{
 			return null;
 		}
 	}
+	
+	public Position getPreviouPos()
+	{
+		if (indexItineraire >0)
+		{
+			return (itineraire.getItineraire().get(indexItineraire - 1));
+		}
+		else
+		{
+			return null;
+		}
+	}
 	@Override
 	public void run()
 	{	
 
 		while(indexItineraire < itineraire.getItineraire().size()-2){
-
+			
 			synchronized (shared) {
-
-				while (!(shared.getCurrentThreads()==shared.getInitializedThreads())) {
+				CanMove=true;
+				while (shared.getCurrentThreads()>shared.getInitializedThreads()) {
 					try {
 						shared.wait();
 					} catch (InterruptedException e) {
@@ -125,8 +138,9 @@ public class CarConcurrent extends Thread{
 
 			SetNextMove();
 
-			if(barrierNextMove.getNumberWaiting() == shared.getCurrentThreads()-1)
-				shared.setInitializedThreads(0);
+			if(barrierNextMove.getNumberWaiting() == barrierNextMove.getParties()-1){
+				System.out.println("bonjour");
+				shared.setInitializedThreads(0);}
 
 			try {
 				barrierNextMove.await();
@@ -135,7 +149,7 @@ public class CarConcurrent extends Thread{
 			}
 
 			//if there is no conflict the car can move
-			if(shared.getNextCarsMove(nextPosition) == 1  && CanMove){
+			if(shared.debug(nextPosition)  && CanMove){
 				moveCar();
 
 				//if the new position is on the crossWay, the car change is state to on crossWay
@@ -143,11 +157,11 @@ public class CarConcurrent extends Thread{
 				{
 					shared.addCarsOnCrossRoad(this);
 					state = 2;
-					shared.deleteCarWaiting(this);
+					shared.deleteCarWaitingCrossRoad(this);
 				}
 				//if the next position is on the crossWay, the car change is state to on onWaiting
 				if(crossRoad.isPositionCrossRoad(getNextMove()) && state==0){
-					shared.addCarWaiting(this);
+					shared.addCarWaitingCrossRoad(this);
 					state=1;
 				}
 				if(state==2 && (!crossRoad.isPositionCrossRoad(getPosition()))){
@@ -192,7 +206,6 @@ public class CarConcurrent extends Thread{
 
 		if(state==0 || state==2 || state==3){
 			shared.addNextCarsMove(getNextMove());
-			CanMove=true;
 			nextPosition = getNextMove();
 		}
 
@@ -207,7 +220,7 @@ public class CarConcurrent extends Thread{
 				}
 			}
 
-			for (CarConcurrent waitingCar : shared.getCarsWaiting()) {
+			for (CarConcurrent waitingCar : shared.getCarsWaitingCrossRoad()) {
 				if (intersectsOnCrossroad(waitingCar.getItineraire(), itineraire))
 				{
 					if(checkPriority(waitingCar) == false)
@@ -218,7 +231,6 @@ public class CarConcurrent extends Thread{
 			if (canEnter)
 			{
 				shared.addNextCarsMove(getNextMove());
-				CanMove = true;
 				nextPosition=getNextMove();
 			}
 			else
@@ -226,6 +238,7 @@ public class CarConcurrent extends Thread{
 				shared.addNextCarsMove(getPosition());
 				CanMove=false;
 				nextPosition = getPosition();
+				SetPreviousCar();
 			}
 		}
 
@@ -233,29 +246,50 @@ public class CarConcurrent extends Thread{
 	}
 
 
+	public void SetPreviousCar() {
+		for(CarConcurrent car:crossRoad.getCars()){
+			if(car.getPosition().equals(getPreviouPos())){
+				car.setCanMove(false);
+				car.SetPreviousCar();
+			}
+		}
+		
+	}
+
 	private boolean checkPriority(CarConcurrent waitingCar) {
 		
 		Direction relativePosition = crossRoad.getDirection(comesFrom, waitingCar.getComesFrom());
 		System.out.println("car num : " + num + " go on" + direction + ", car num " + waitingCar.getNum() + " go on " + waitingCar.getDirection() + " he is on the " +relativePosition);
+		
+		if(shared.getCarsWaitingCrossRoad().size()==4){
+			int max=0;
+			for(CarConcurrent c :shared.getCarsWaitingCrossRoad()){
+				max=Math.max(c.getNum(), max);
+			}
+			if(num==max){
+				return true;
+			}
+		}
 
-		if(direction==Direction.RIGHT){
+		else if(direction==Direction.RIGHT){
 			return true;
 		}
-		if(direction==Direction.FRONT){
+		else if(direction==Direction.FRONT){
 			if(relativePosition == Direction.RIGHT)
 				return false;
 			else 
 				return true;
 		}
-		if(direction==Direction.LEFT){
+		else if(direction==Direction.LEFT){
 			if(relativePosition == Direction.RIGHT)
 				return false;
 			else if(relativePosition == Direction.FRONT){
-					return false;
+					return true;
 			}
 			else
 				return true;
 		}
+
 		return false;
 	}
 
@@ -290,7 +324,9 @@ public class CarConcurrent extends Thread{
 	public void setComesFrom(int comesFrom) {
 		this.comesFrom = comesFrom;
 	}
-
-	private int comesFrom;
+	
+	public void setCanMove(boolean c){
+		CanMove=c;
+	}
 
 }
