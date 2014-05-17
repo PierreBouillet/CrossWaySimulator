@@ -10,7 +10,7 @@ public class Main {
     public static void main(String[] args) {
         JFrame frame = new JFrame("Problème du carrefour - Version itérative");
         CrossRoadsPanel panel = new CrossRoadsPanel();
-        CrossRoadsLogicConcurrent logic = new CrossRoadsLogicConcurrent();
+        CrossRoadsLogic logic = new CrossRoadsLogic();
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
@@ -24,7 +24,7 @@ public class Main {
         while (true)
         {
             logic.step();
-            panel.updateGraphicsFromLogicConc(logic.getCells());
+            panel.updateGraphicsFromLogic(logic.getCells());
             panel.repaint();
             frame.repaint();
             frame.pack();

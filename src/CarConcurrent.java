@@ -43,6 +43,7 @@ public class CarConcurrent extends Thread{
 		this.shared = sh;
 		this.direction = dir;
 		this.comesFrom = from;
+		System.out.println("car number " + num + " has been created");
 	}
 
 	public CarConcurrent(Color clr)
@@ -123,7 +124,7 @@ public class CarConcurrent extends Thread{
 		while(indexItineraire < itineraire.getItineraire().size()-2){
 			
 			synchronized (shared) {
-
+				CanMove=true;
 				while (shared.getCurrentThreads()>shared.getInitializedThreads()) {
 					try {
 						shared.wait();
@@ -138,6 +139,7 @@ public class CarConcurrent extends Thread{
 			SetNextMove();
 
 			if(barrierNextMove.getNumberWaiting() == barrierNextMove.getParties()-1){
+				System.out.println("bonjour");
 				shared.setInitializedThreads(0);}
 
 			try {
@@ -167,7 +169,8 @@ public class CarConcurrent extends Thread{
 					shared.deleteCarsOnCrossRoad(this);
 				}
 			}
-			CanMove=true;
+
+			System.out.println("car number " + num +" have state " + state);
 
 			try {
 				barrierStep.await();
@@ -176,7 +179,7 @@ public class CarConcurrent extends Thread{
 			}
 
 		}
-		//System.out.println("car number " + num +" has gone ");
+		System.out.println("car number " + num +" has gone ");
 		crossRoad.deleteCars(this);
 		crossRoad.unSetCarFromCell(this);
 	}
@@ -239,6 +242,7 @@ public class CarConcurrent extends Thread{
 			}
 		}
 
+		System.out.println("car number " + num + " has set his move");
 	}
 
 
@@ -255,6 +259,7 @@ public class CarConcurrent extends Thread{
 	private boolean checkPriority(CarConcurrent waitingCar) {
 		
 		Direction relativePosition = crossRoad.getDirection(comesFrom, waitingCar.getComesFrom());
+		System.out.println("car num : " + num + " go on" + direction + ", car num " + waitingCar.getNum() + " go on " + waitingCar.getDirection() + " he is on the " +relativePosition);
 		
 		if(shared.getCarsWaitingCrossRoad().size()==4){
 			int max=0;
