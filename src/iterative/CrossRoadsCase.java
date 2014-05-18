@@ -1,4 +1,4 @@
-import java.awt.*;
+package iterative;
 
 /**
  * Created by William TASSOUX on 05/05/2014.

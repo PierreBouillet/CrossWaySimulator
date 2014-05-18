@@ -1,5 +1,10 @@
+package concurrent;
+
 import java.awt.*;
 import java.util.*;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -7,19 +12,20 @@ import java.util.*;
  */
 public class CrossRoadsLogic
 {
-    private final double apparitionProbability = 0.15;
+    private final double apparitionProbability = 1;
     private int size = Consts.size;
     private int roadSize = Consts.roadSize;
-    private ArrayList<CrossRoadsCase> cells;
     private ArrayList<Position> ins;
     private ArrayList<Position> outs;
-    private ArrayList<Car> cars;
+    private SharedRessources sharedRessources;
     private Random random;
     private int carId;
 
     public CrossRoadsLogic()
     {
-        cells = new ArrayList<CrossRoadsCase>(size * size);
+        ArrayList<CrossRoadsCase> cells = new ArrayList<CrossRoadsCase>(size * size);
+        sharedRessources = new SharedRessources();
+
         for (int row = 0; row < size; row++) {
             for (int col = 0; col < size; col++) {
                 boolean isRelevant = false;
@@ -34,9 +40,11 @@ public class CrossRoadsLogic
                 cells.add(cell);
             }
         }
+
+        sharedRessources.setCells(cells);
+        sharedRessources.setCars(new ArrayList<ThreadCar>());
         carId = 0;
         random = new Random();
-        cars = new ArrayList<Car>();
         ins = new ArrayList<Position>();
         outs = new ArrayList<Position>();
         generatePositions();
@@ -142,6 +150,11 @@ public class CrossRoadsLogic
         return (new Itineraire(pos));
     }
 
+    public ArrayList<CrossRoadsCase> getCells()
+    {
+        return sharedRessources.getCells();
+    }
+
     public void createNewCars()
     {
         ArrayList<Integer> possibleFromPos = new ArrayList<Integer>();
@@ -151,7 +164,7 @@ public class CrossRoadsLogic
         {
             possibleToPos.add(i);
             // Si la cellule contient déjà une voiture on ne peut pas y faire apparaître une autre voiture
-            if (getCellFromPosition(ins.get(i)).getContent() == null)
+            if (sharedRessources.getCellFromPosition(ins.get(i)).getContent() == null)
             {
                 possibleFromPos.add(i);
             }
@@ -172,10 +185,10 @@ public class CrossRoadsLogic
                 // On crée la liste de cases permettant d'aller du départ à l'arrivée
                 Itineraire it = generateItineraire(ins.get(from), outs.get(to));
                 // On crée une nouvelle voiture d'une couleur aléatoire et possédant l'itinéraire généré ci-dessus
-                Car newCar = new Car(carId, new Color((int)(Math.random() * 0x1000000)), 1, it);
-                // On ajoute la voiture au système
-                cars.add(newCar);
-                setCarToCell(newCar);
+                ThreadCar newCar = new ThreadCar(carId, new Color((int)(Math.random() * 0x1000000)), it, sharedRessources);
+                sharedRessources.setCarToCell(newCar.getCar());
+                sharedRessources.getCars().add(newCar);
+                newCar.start();
                 // On remet la direction précédemment enlevée dans la liste possible des destinations d'arrivées
                 possibleToPos.add(from);
             }
@@ -184,26 +197,13 @@ public class CrossRoadsLogic
         }
     }
 
-    private CrossRoadsCase getCellFromPosition(Position pos)
-    {
-        return (cells.get(pos.getX() * size + pos.getY()));
-    }
-    private void setCarToCell(Car car)
-    {
-        getCellFromPosition(car.getPosition()).setContent(car);
-    }
-
-    private void unSetCarFromCell(Car car)
-    {
-        getCellFromPosition(car.getPosition()).setContent(null);
-    }
 
 
     private void debugCounts()
     {
-        System.out.println("Car counts: " + cars.size());
+        System.out.println("concurrent.Car counts: " + sharedRessources.getCars().size());
         int carCount = 0;
-        for (CrossRoadsCase cell: cells)
+        for (CrossRoadsCase cell: sharedRessources.getCells())
         {
             if (cell.getContent() != null)
                 carCount++;
@@ -211,122 +211,70 @@ public class CrossRoadsLogic
         System.out.println("Real car count: " + carCount);
     }
 
-    private void moveCarAlgorithm()
-    {
-        ArrayList<Car> carListCopy = new ArrayList<Car>(cars);
-        ArrayList<Car> alreadyOnCrossroadCars = new ArrayList<Car>();
-        moveAlreadyOnCrossroadCars(carListCopy, alreadyOnCrossroadCars);
-        moveEnteringCrossroadCars(carListCopy, alreadyOnCrossroadCars);
-        moveOtherCars(carListCopy);
-    }
-
-    private boolean intersectsOnCrossroad(Itineraire t1, Itineraire t2)
-    {
-        for (Position p1: t1.getItineraire())
-        {
-            for (Position p2: t2.getItineraire())
-            {
-                if (getCellFromPosition(p1).isCrossroad() && getCellFromPosition(p2).isCrossroad())
-                {
-                    if (p1.equals(p2))
-                        return (true);
-                }
-            }
-        }
-        return (false);
-    }
-
-    private void moveOtherCars(ArrayList<Car> carListCopy)
-    {
-        boolean hasMoved = true;
-        while (!carListCopy.isEmpty() && hasMoved)
-        {
-            hasMoved = false;
-            for (Iterator<Car> it = carListCopy.iterator(); it.hasNext();)
-            {
-                Car car = it.next();
-                if (getCellFromPosition(car.getNextMove()).getContent() == null)
-                {
-                    hasMoved = true;
-                    unSetCarFromCell(car);
-                    car.moveCar();
-                    setCarToCell(car);
-                    it.remove();
-                }
-            }
-        }
-    }
-
-
-    private void moveEnteringCrossroadCars(ArrayList<Car> carListCopy, ArrayList<Car> alreadyOnCrossroadCars)
-    {
-        ArrayList<Car> enteringCrossroadCars = new ArrayList<Car>();
-        for (Iterator<Car> it = carListCopy.iterator(); it.hasNext();)
-        {
-            Car car = it.next();
-            if (getCellFromPosition(car.getNextMove()).isCrossroad())
-            {
-                enteringCrossroadCars.add(car);
-                it.remove();
-            }
-        }
-        for (Car enteringCar: enteringCrossroadCars)
-        {
-            boolean canEnter = true;
-            for (Car alreadyOnCrossroadCar : alreadyOnCrossroadCars) {
-                if (intersectsOnCrossroad(alreadyOnCrossroadCar.getItineraire(), enteringCar.getItineraire()))
-                {
-                    canEnter = false;
-                }
-            }
-            if (canEnter)
-            {
-                unSetCarFromCell(enteringCar);
-                enteringCar.moveCar();
-                setCarToCell(enteringCar);
-                alreadyOnCrossroadCars.add(enteringCar);
-            }
-        }
-    }
-
-    private void moveAlreadyOnCrossroadCars(ArrayList<Car> carListCopy, ArrayList<Car> alreadyOnCrossroadCars)
-    {
-        for (Iterator<Car> it = carListCopy.iterator(); it.hasNext();)
-        {
-            Car car = it.next();
-            if (getCellFromPosition(car.getPosition()).isCrossroad())
-            {
-                alreadyOnCrossroadCars.add(car);
-                unSetCarFromCell(car);
-                car.moveCar();
-                setCarToCell(car);
-                it.remove();
-            }
-        }
-    }
-
     private void removeOutOfScreenCars()
     {
-        for (Iterator<Car> it = cars.iterator(); it.hasNext();)
+        for (Iterator<ThreadCar> it = sharedRessources.getCars().iterator(); it.hasNext();)
         {
-            Car car = it.next();
-            if (car.getNextMove() == null)
+            ThreadCar threadCar = it.next();
+            if (threadCar.getCar().getNextMove() == null)
             {
-                unSetCarFromCell(car);
+                sharedRessources.unSetCarFromCell(threadCar.getCar());
                 it.remove();
             }
         }
     }
 
+    private int getNumberOfAliveThreads()
+    {
+        int size = 0;
+        for (ThreadCar c: sharedRessources.getCars())
+        {
+            if (c.getCar().getNextMove() != null)
+                ++size;
+        }
+        return size;
+    }
+
+    private void moveCarAlgorithm()
+    {
+        if (!sharedRessources.getCars().isEmpty())
+        {
+            sharedRessources.incrementTurnNb();
+            do {
+                // On attend que toutes les threads soient prêtes à démarrer
+                sharedRessources.resetNumberMoves();
+                sharedRessources.getLockStart().lock();
+                while (sharedRessources.getCountWaiting() != getNumberOfAliveThreads()) {
+                    try {
+                        sharedRessources.getConditionWait().await();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                sharedRessources.setBarrierEndTurn(new CyclicBarrier(getNumberOfAliveThreads() + 1));
+                sharedRessources.setHasStarted(true);
+                sharedRessources.getConditionStart().signalAll();
+                sharedRessources.getLockStart().unlock();
+                try {
+                    sharedRessources.getBarrierEndTurn().await();
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (BrokenBarrierException e) {
+                    e.printStackTrace();
+                }
+                sharedRessources.getLockStart().lock();
+                sharedRessources.reset();
+                sharedRessources.getConditionEnd().signalAll();
+                sharedRessources.getLockStart().unlock();
+            }
+            while (sharedRessources.getNumberMoves() != 0);
+        }
+    }
     public void step()
     {
         removeOutOfScreenCars();
         moveCarAlgorithm();
         createNewCars();
-    }
-
-    public ArrayList<CrossRoadsCase> getCells()
-    {
-        return cells;
     }
 }

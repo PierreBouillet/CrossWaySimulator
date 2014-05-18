@@ -1,14 +1,12 @@
+package concurrent;
+
 import java.awt.BorderLayout;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
 
 import javax.swing.*;
-import javax.swing.plaf.SliderUI;
 
 public class Main {
     public static void main(String[] args) {
-        JFrame frame = new JFrame("Problème du carrefour - Version itérative");
+        JFrame frame = new JFrame("Problème du carrefour - Version concurrente");
         CrossRoadsPanel panel = new CrossRoadsPanel();
         CrossRoadsLogic logic = new CrossRoadsLogic();
 
@@ -29,7 +27,7 @@ public class Main {
             frame.repaint();
             frame.pack();
             try {
-                Thread.sleep(300);
+                Thread.sleep(200);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

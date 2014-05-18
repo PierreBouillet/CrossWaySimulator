@@ -1,3 +1,5 @@
+package iterative;
+
 import java.awt.*;
 import java.util.*;
 
@@ -7,7 +9,7 @@ import java.util.*;
  */
 public class CrossRoadsLogic
 {
-    private final double apparitionProbability = 0.15;
+    private final double apparitionProbability = 1;
     private int size = Consts.size;
     private int roadSize = Consts.roadSize;
     private ArrayList<CrossRoadsCase> cells;
@@ -201,7 +203,7 @@ public class CrossRoadsLogic
 
     private void debugCounts()
     {
-        System.out.println("Car counts: " + cars.size());
+        System.out.println("concurrent.Car counts: " + cars.size());
         int carCount = 0;
         for (CrossRoadsCase cell: cells)
         {
@@ -220,21 +222,7 @@ public class CrossRoadsLogic
         moveOtherCars(carListCopy);
     }
 
-    private boolean intersectsOnCrossroad(Itineraire t1, Itineraire t2)
-    {
-        for (Position p1: t1.getItineraire())
-        {
-            for (Position p2: t2.getItineraire())
-            {
-                if (getCellFromPosition(p1).isCrossroad() && getCellFromPosition(p2).isCrossroad())
-                {
-                    if (p1.equals(p2))
-                        return (true);
-                }
-            }
-        }
-        return (false);
-    }
+
 
     private void moveOtherCars(ArrayList<Car> carListCopy)
     {
@@ -257,6 +245,21 @@ public class CrossRoadsLogic
         }
     }
 
+    private boolean intersectsOnCrossroad(Itineraire t1, Itineraire t2)
+    {
+        for (Position p1: t1.getItineraire())
+        {
+            for (Position p2: t2.getItineraire())
+            {
+                if (getCellFromPosition(p1).isCrossroad() && getCellFromPosition(p2).isCrossroad())
+                {
+                    if (p1.equals(p2))
+                        return (true);
+                }
+            }
+        }
+        return (false);
+    }
 
     private void moveEnteringCrossroadCars(ArrayList<Car> carListCopy, ArrayList<Car> alreadyOnCrossroadCars)
     {
@@ -323,6 +326,7 @@ public class CrossRoadsLogic
         removeOutOfScreenCars();
         moveCarAlgorithm();
         createNewCars();
+        debugCounts();
     }
 
     public ArrayList<CrossRoadsCase> getCells()

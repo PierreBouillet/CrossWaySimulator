@@ -1,7 +1,6 @@
+package iterative;
+
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
 
 public class Car extends Thread{
 
@@ -71,6 +70,7 @@ public class Car extends Thread{
 
     public Position getNextMove()
     {
+        /*
         if (indexItineraire < itineraire.getItineraire().size() - 1)
         {
             return (itineraire.getItineraire().get(indexItineraire + 1));
@@ -78,6 +78,19 @@ public class Car extends Thread{
         else
         {
             return null;
+        }*/
+        return (getNthMove(1));
+    }
+
+    public Position getNthMove(int i)
+    {
+        if (indexItineraire + i < itineraire.getItineraire().size())
+        {
+            return (itineraire.getItineraire().get(indexItineraire + i));
+        }
+        else
+        {
+            return (null);
         }
     }
 

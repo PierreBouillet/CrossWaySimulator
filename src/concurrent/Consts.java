@@ -1,3 +1,5 @@
+package concurrent;
+
 /**
  * Created by William TASSOUX on 05/05/2014.
  */
