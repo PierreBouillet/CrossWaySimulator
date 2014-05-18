@@ -6,4 +6,5 @@ package concurrent;
 public class Consts {
     public static final int size = 20;
     public static final int roadSize = 1;
+    public static final double apparitionProbability = 1.0;
 }

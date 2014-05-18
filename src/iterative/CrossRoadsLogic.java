@@ -9,7 +9,7 @@ import java.util.*;
  */
 public class CrossRoadsLogic
 {
-    private final double apparitionProbability = 1;
+    private final double apparitionProbability = Consts.apparitionProbability;
     private int size = Consts.size;
     private int roadSize = Consts.roadSize;
     private ArrayList<CrossRoadsCase> cells;
